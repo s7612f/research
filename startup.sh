@@ -24,5 +24,5 @@ touch "$DB_PATH"
 IP=$(hostname -I | awk '{print $1}')
 echo "Open: http://$IP:7777"
 
-# Launch the web interface
-exec python3 web_interface.py "$@"
+# Launch the startup helper which configures mode and runs the web interface
+exec python3 startup.py "$@"

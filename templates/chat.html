@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+<head>
+<title>Chatbot</title>
+<script>
+async function sendMessage(){
+  const input=document.getElementById('msg');
+  const text=input.value; input.value='';
+  const res=await fetch('/chat/send', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({message:text})});
+  const data=await res.json();
+  const history=document.getElementById('history');
+  history.innerHTML += '<div><b>You:</b> '+text+'</div>';
+  history.innerHTML += '<div><b>Bot:</b> '+data.reply+'</div>';
+}
+</script>
+</head>
+<body>
+<div id="history" style="height:300px; overflow:auto; border:1px solid #ccc;"></div>
+<input id="msg" type="text"/>
+<button onclick="sendMessage()">Send</button>
+</body>
+</html>

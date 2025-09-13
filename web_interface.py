@@ -1,10 +1,15 @@
 import json
+import os
+import uuid
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from urllib.parse import parse_qs
 from jobs.job_manager import job_manager
+from chatbot_engine import get_engine
 
-with open('config.json') as f:
-    CONFIG = json.load(f)
-
+with open('config.json') as _f:
+    CONFIG = json.load(_f)
 autostarted = False
+sessions = {}
 
 def handle_index():
     global autostarted
@@ -35,43 +40,98 @@ def handle_cancel():
 def handle_status():
     return job_manager.status()
 
-def run_server():
-    from http.server import BaseHTTPRequestHandler, HTTPServer
-    import json as _json
+def run_server(config=None):
+    global CONFIG
+    if config is None:
+        with open('config.json') as f:
+            CONFIG = json.load(f)
+    else:
+        CONFIG = config
+    engine = get_engine(CONFIG)
 
     class Handler(BaseHTTPRequestHandler):
-        def do_GET(self_inner):
-            if self_inner.path == '/':
-                handle_index()
-                self_inner.send_response(200)
-                self_inner.end_headers()
-                self_inner.wfile.write(b'OK')
-            elif self_inner.path == '/status':
-                self_inner.send_response(200)
-                self_inner.end_headers()
-                self_inner.wfile.write(_json.dumps(handle_status()).encode())
-            else:
-                self_inner.send_response(404)
-                self_inner.end_headers()
+        def load_session(self):
+            cookie = self.headers.get('Cookie', '')
+            sid = None
+            for part in cookie.split(';'):
+                if part.strip().startswith('sid='):
+                    sid = part.strip()[4:]
+            if not sid or sid not in sessions:
+                sid = str(uuid.uuid4())
+                sessions[sid] = {
+                    'mode': CONFIG.get('chatbot', {}).get('default_mode', 'research'),
+                    'uncensored': CONFIG.get('chatbot', {}).get('force_uncensored', False)
+                }
+            self.send_header('Set-Cookie', f'sid={sid}; Path=/')
+            self.sid = sid
+            self.session = sessions[sid]
 
-        def do_POST(self_inner):
-            length = int(self_inner.headers.get('Content-Length', 0))
-            data = self_inner.rfile.read(length)
+        def do_GET(self):
+            if self.path == '/':
+                self.send_response(200)
+                self.load_session()
+                with open('templates/index.html', 'rb') as f:
+                    content = f.read()
+                self.end_headers()
+                self.wfile.write(content)
+            elif self.path == '/research':
+                self.send_response(200)
+                self.load_session()
+                handle_index()
+                with open('templates/research.html', 'rb') as f:
+                    content = f.read()
+                self.end_headers()
+                self.wfile.write(content)
+            elif self.path == '/chat':
+                self.send_response(200)
+                self.load_session()
+                with open('templates/chat.html', 'rb') as f:
+                    content = f.read()
+                self.end_headers()
+                self.wfile.write(content)
+            elif self.path == '/status':
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(json.dumps(handle_status()).encode())
+            else:
+                self.send_response(404)
+                self.end_headers()
+
+        def do_POST(self):
+            length = int(self.headers.get('Content-Length', 0))
+            data = self.rfile.read(length)
             try:
-                payload = _json.loads(data.decode()) if data else {}
+                payload = json.loads(data.decode()) if data else {}
             except Exception:
                 payload = {}
-            if self_inner.path == '/run':
+            if self.path == '/run':
                 res = handle_run(payload)
-            elif self_inner.path == '/cancel':
+            elif self.path == '/cancel':
                 res = handle_cancel()
-            else:
-                self_inner.send_response(404)
-                self_inner.end_headers()
+            elif self.path == '/chat/send':
+                self.load_session()
+                msg = payload.get('message', '')
+                reply = engine.chat(self.sid, msg, uncensored=self.session.get('uncensored', False))
+                res = {'reply': reply}
+            elif self.path == '/select':
+                params = parse_qs(data.decode())
+                mode = params.get('mode', ['research'])[0]
+                unc = params.get('uncensored', ['0'])[0] == '1'
+                self.load_session()
+                self.session['mode'] = mode
+                self.session['uncensored'] = unc
+                self.send_response(302)
+                location = '/chat' if mode == 'chatbot' else '/research'
+                self.send_header('Location', location)
+                self.end_headers()
                 return
-            self_inner.send_response(200)
-            self_inner.end_headers()
-            self_inner.wfile.write(_json.dumps(res).encode())
+            else:
+                self.send_response(404)
+                self.end_headers()
+                return
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(json.dumps(res).encode())
 
     server = HTTPServer(('0.0.0.0', 7777), Handler)
     server.serve_forever()

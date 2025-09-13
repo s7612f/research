@@ -24,6 +24,20 @@ RUNPOD BOOTS → AUTO-STARTS WEB UI → CHECKS DATABASE → CONTINUES OR REFINES
 Open browser: http://[your-pod-ip]:7777
 ```
 
+On first load you'll see a mode selector:
+
+- **Continue Research Agent** – runs the autonomous researcher
+- **Start Uncensored Chatbot** – opens a simple chat UI
+
+You can also launch directly into chatbot mode:
+
+```
+python3 startup.py --mode chatbot --uncensored
+# then open the printed URL
+```
+
+If using the OpenAI backend, copy `.env.example` to `.env` and provide your `OPENAI_API_KEY`.
+
 ### 3. System Auto-Detects Previous Research
 - **First time**: Asks for your research topic
 - **Returning**: Shows previous research, asks to continue or refine
