@@ -2,9 +2,10 @@
     "max_hours": 3,
     "git_enabled": true,
     "auto_push": false,
+    "database_path": "/root/research.db",
     "llm": {
         "base_url": "http://localhost:11434",
-        "model": "dolphin-mixtral:8x7b",
+        "model": "dMixtral-8x7B-v0.1",
         "api_type": "ollama",
         "timeout": 120
     },
@@ -16,5 +17,13 @@
     "notifications": {
         "enabled": false,
         "webhook_url": ""
+    },
+    "scheduler": {"enabled": false},
+    "ui": {
+        "autostart_on_open": true,
+        "autostart_once_per_process": true,
+        "default_topic": "Global banking conspiracies",
+        "default_hours": 2,
+        "default_focus": "cartelization, regulatory capture, market manipulation"
     }
 }

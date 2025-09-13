@@ -1,0 +1,17 @@
+version: '3'
+services:
+  app:
+    build: .
+    command: python3 web_interface.py
+    ports:
+      - "7777:7777"
+    volumes:
+      - .:/app
+  ollama:
+    image: ollama/ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama:/root/.ollama
+volumes:
+  ollama:
