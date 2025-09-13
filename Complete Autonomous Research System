@@ -298,9 +298,10 @@ class InformationGatherer:
 
 class KnowledgeBase:
     """Manages the research database"""
-    
-    def __init__(self, db_path: str = 'data/research.db'):
+
+    def __init__(self, db_path: str = '/root/research.db'):
         self.db_path = db_path
+        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         self.init_database()
         
     def init_database(self):
@@ -459,7 +460,8 @@ class AutonomousResearchAgent:
         
         self.brain = ResearchBrain(llm_config)
         self.gatherer = InformationGatherer()
-        self.knowledge = KnowledgeBase()
+        db_path = self.config.get('database_path', '/root/research.db')
+        self.knowledge = KnowledgeBase(db_path)
         
         # State
         self.iteration = 0

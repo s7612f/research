@@ -100,25 +100,12 @@ Open browser: http://[your-pod-ip]:7777
 
 ```
 research/
-├── web_interface.py      # Web UI (port 7777)
-├── research_agent.py     # AI brain
-├── database_manager.py   # Smart deduplication
-├── email_sender.py       # Results delivery
-├── startup.sh           # Auto-runs on boot
-├── config.json          # Settings
-│
-├── data/
-│   ├── research.db      # All findings (persistent)
-│   ├── clusters/        # Grouped similar findings
-│   └── exports/         # Email attachments
-│
-├── templates/
-│   ├── chat.html        # ChatGPT-like interface
-│   ├── progress.html    # Live research view
-│   └── review.html      # Previous findings viewer
-│
-└── logs/
-    └── research.log     # Activity log
+├── Complete Autonomous Research System  # Main autonomous agent
+├── startup.sh                           # Checks Ollama and launches agent
+├── config.json                          # Settings (model & database)
+├── setup.sh                             # Dependency installer
+├── /root/research.db                    # Persistent SQLite database
+└── logs/                                # Activity logs
 ```
 
 ## 💾 Smart Database System
@@ -353,6 +340,7 @@ chmod +x setup.sh
 # Add to RunPod startup script:
 echo "/root/research/startup.sh" >> /root/startup.sh
 ```
+The `startup.sh` script verifies that Ollama is running with the `dMixtral-8x7B-v0.1` model and then launches the research agent. All research data is stored in `/root/research.db` for easy export after the pod shuts down.
 
 4. **Access Interface**
 ```
