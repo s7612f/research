@@ -346,8 +346,7 @@ Session 3: "Focus on gold standard"
 1. **Clone Repository**
 ```bash
 cd /root
-git clone https://github.com/s7612f/research.git
-cd research
+git clone https://github.com/s7612f/research.git && cd research
 ```
 
 2. **Run Setup**
