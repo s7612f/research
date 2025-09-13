@@ -1,10 +1,10 @@
-# RunPod Ollama Dolphin Mixtral Setup
+# Ollama Dolphin Mixtral Setup
 
-This repository helps you deploy the **Dolphin Mixtral 8×7B** model on a RunPod GPU using [Ollama](https://ollama.ai). It installs prerequisites, downloads the model, and prepares a Python environment for deeper research tasks.
+This repository helps you deploy the **Dolphin Mixtral 8×7B** model with [Ollama](https://ollama.ai) on macOS or Linux (including RunPod). The setup script checks prerequisites, installs Ollama, downloads the model, and prepares a Python environment for deeper research tasks or normal chatbot use.
 
 ## Quick Start
 
-1. **Clone on RunPod**
+1. **Clone the repo**
    ```bash
    git clone <your-repo-url> && cd research
    ```
@@ -19,12 +19,10 @@ This repository helps you deploy the **Dolphin Mixtral 8×7B** model on a RunPod
    ```
 
 ## What the setup script does
-- Verifies GPU availability with `nvidia-smi`
-- Checks/installs Python 3
-- Installs Ollama if missing
-- Starts the Ollama service
+- Detects macOS or Linux and installs missing prerequisites
+- Installs Ollama if missing and ensures the service is running
 - Pulls the `dolphin-mixtral:8x7b` model
-- Installs Python packages for deep research (LangChain, ChromaDB, BeautifulSoup, Requests)
+- Installs Python packages for deep research (LangChain, ChromaDB, Requests, BeautifulSoup)
 
 ## Deep Research Workflow
 1. Collect or download documents (web pages, PDFs, etc.).
@@ -61,7 +59,7 @@ Exit with `Ctrl+C`.
 ## Troubleshooting
 - **Ollama not running**: `ollama serve` and retry the command.
 - **Model missing**: Run `ollama pull dolphin-mixtral:8x7b`.
-- **GPU not detected**: Ensure your RunPod instance has a GPU and drivers.
+- **GPU not detected (Linux)**: Ensure your machine has an NVIDIA GPU and drivers installed.
 
 ## License
 MIT
