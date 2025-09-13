@@ -356,12 +356,7 @@ chmod +x setup.sh
 ./setup.sh
 ```
 
-3. **Remove old cron entry**
-```bash
-crontab -l | grep -v "research_agent.py" | crontab -
-```
-
-4. **Start Web UI**
+3. **Start Web UI**
 ```bash
 python3 web_interface.py
 ```
