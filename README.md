@@ -34,10 +34,10 @@ Open browser: http://[your-pod-ip]:7777
 ┌──────────────────────────────────────────────────────────────────┐
 │                      BOOT SEQUENCE                                │
 ├──────────────────────────────────────────────────────────────────┤
-│  1. RunPod starts → runs startup.sh automatically                 │
-│  2. Ollama loads dolphin-mixtral:8x7b model                       │
-│  3. Web server starts on port 7777                               │
-│  4. You browse to http://[pod-ip]:7777                           │
+│  1. RunPod starts                                               │
+│  2. Ollama loads dolphin-mixtral:8x7b model                     │
+│  3. Operator runs `python3 web_interface.py`                    │
+│  4. You browse to http://[pod-ip]:7777                          │
 └──────────────────────────────────────────────────────────────────┘
                                 ↓
 ┌──────────────────────────────────────────────────────────────────┐
@@ -106,12 +106,14 @@ Open browser: http://[your-pod-ip]:7777
 
 ```
 research/
-├── Complete Autonomous Research System  # Main autonomous agent
-├── startup.sh                           # Checks Ollama and launches agent
-├── config.json                          # Settings (model & database)
-├── setup.sh                             # Dependency installer
-├── /root/research.db                    # Persistent SQLite database
-└── logs/                                # Activity logs
+├── research_agent.py       # Main autonomous agent
+├── web_interface.py        # Flask web UI
+├── jobs/                   # Job manager
+├── tools/                  # Utilities (Wayback archiver)
+├── config.json             # Settings (model & database)
+├── setup.sh                # Dependency installer
+├── /root/research.db       # Persistent SQLite database
+└── logs/                   # Activity logs
 ```
 
 ## 💾 Smart Database System
@@ -217,6 +219,19 @@ Previously researched:
     "enabled": true,
     "after_hours": 3
   }
+}
+```
+
+#### Scheduler and UI options
+
+```json
+"scheduler": { "enabled": false },
+"ui": {
+  "autostart_on_open": true,
+  "autostart_once_per_process": true,
+  "default_topic": "Global banking conspiracies",
+  "default_hours": 2,
+  "default_focus": "cartelization, regulatory capture, market manipulation"
 }
 ```
 
@@ -341,17 +356,16 @@ chmod +x setup.sh
 ./setup.sh
 ```
 
-3. **Configure Auto-Start**
+3. **Remove old cron entry**
 ```bash
-# Add to RunPod startup script:
-echo "/root/research/startup.sh" >> /root/startup.sh
+crontab -l | grep -v "research_agent.py" | crontab -
 ```
-The `startup.sh` script verifies that Ollama is running with the `dolphin-mixtral:8x7b` model and then launches the research agent. All research data is stored in `/root/research.db` for easy export after the pod shuts down.
 
-4. **Access Interface**
+4. **Start Web UI**
+```bash
+python3 web_interface.py
 ```
-Browse to: http://[pod-ip]:7777
-```
+Open `http://[pod-ip]:7777` in your browser. If `ui.autostart_on_open` is enabled, the first visit triggers a run using defaults; otherwise fill the form and press **Run**.
 
 ## 📝 Commands
 

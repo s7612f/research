@@ -17,5 +17,13 @@
     "notifications": {
         "enabled": false,
         "webhook_url": ""
+    },
+    "scheduler": {"enabled": false},
+    "ui": {
+        "autostart_on_open": true,
+        "autostart_once_per_process": true,
+        "default_topic": "Global banking conspiracies",
+        "default_hours": 2,
+        "default_focus": "cartelization, regulatory capture, market manipulation"
     }
 }
