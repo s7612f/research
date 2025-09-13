@@ -2,7 +2,7 @@
 # startup.sh - verify environment and launch research agent
 set -e
 
-MODEL="dMixtral-8x7B-v0.1"
+MODEL="Mixtral-8x7B-v0.1"
 
 echo "=== Startup: checking Ollama ==="
 if ! command -v ollama >/dev/null 2>&1; then

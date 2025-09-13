@@ -79,7 +79,7 @@ class ResearchBrain:
     
     def __init__(self, llm_config: Dict):
         self.base_url = llm_config.get('base_url', 'http://localhost:11434')
-        self.model = llm_config.get('model', 'dolphin-mixtral:8x7b')
+        self.model = llm_config.get('model', 'Mixtral-8x7B-v0.1')
         self.api_type = llm_config.get('api_type', 'ollama')
         
     async def think(self, context: str, question: str) -> Dict:
@@ -263,23 +263,111 @@ class InformationGatherer:
         return results
     
     async def deep_search(self, query: str) -> List[Dict]:
-        """Deep investigation including forums, archives"""
+        """Deep investigation including forums, archives, and videos"""
         results = []
-        
-        # Would search:
-        # - Reddit
-        # - Archives.org
-        # - Academic papers
-        # - Forums
-        
-        results.append({
-            'source': 'deep_search',
-            'query': query,
-            'info': 'Deep search would check forums, archives, academic sources',
-            'timestamp': datetime.now().isoformat()
-        })
-        
+
+        # Internet Archive books
+        results.extend(await self.search_internet_archive(query))
+
+        # Forum discussions (e.g., Reddit)
+        results.extend(await self.search_forums(query))
+
+        # Video transcripts (e.g., YouTube)
+        results.extend(await self.search_video_transcripts(query))
+
         return results
+
+    async def search_internet_archive(self, query: str) -> List[Dict]:
+        """Find books and texts from Internet Archive"""
+        try:
+            from urllib.parse import quote
+            url = (
+                f"https://archive.org/advancedsearch.php?"
+                f"q={quote(query)}&output=json&rows=5&fields=title,identifier"
+            )
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    url, timeout=aiohttp.ClientTimeout(total=10)
+                ) as response:
+                    data = await response.json()
+            docs = data.get('response', {}).get('docs', [])
+            results = []
+            for doc in docs:
+                ident = doc.get('identifier')
+                results.append({
+                    'source': 'internet_archive',
+                    'title': doc.get('title', ident),
+                    'url': f"https://archive.org/details/{ident}",
+                    'timestamp': datetime.now().isoformat()
+                })
+            return results
+        except Exception as e:
+            logger.error(f"Internet Archive search error: {e}")
+            return []
+
+    async def search_forums(self, query: str) -> List[Dict]:
+        """Gather advice from forum discussions"""
+        try:
+            from urllib.parse import quote
+            url = (
+                f"https://www.reddit.com/search.json?q={quote(query)}&limit=5&sort=relevance"
+            )
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    url,
+                    headers={'User-Agent': 'Mozilla/5.0'},
+                    timeout=aiohttp.ClientTimeout(total=10)
+                ) as response:
+                    data = await response.json()
+            posts = data.get('data', {}).get('children', [])
+            results = []
+            for post in posts:
+                pdata = post.get('data', {})
+                results.append({
+                    'source': 'reddit',
+                    'title': pdata.get('title'),
+                    'url': f"https://www.reddit.com{pdata.get('permalink')}",
+                    'timestamp': datetime.now().isoformat()
+                })
+            return results
+        except Exception as e:
+            logger.error(f"Forum search error: {e}")
+            return []
+
+    async def search_video_transcripts(self, query: str) -> List[Dict]:
+        """Find video transcripts related to the query"""
+        try:
+            from urllib.parse import quote
+            search_url = f"https://www.youtube.com/results?search_query={quote(query)}"
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    search_url,
+                    headers={'User-Agent': 'Mozilla/5.0'},
+                    timeout=aiohttp.ClientTimeout(total=10)
+                ) as response:
+                    html = await response.text()
+            video_ids = re.findall(r"watch\?v=([\w-]{11})", html)
+            results = []
+            if not video_ids:
+                return results
+            try:
+                from youtube_transcript_api import YouTubeTranscriptApi
+                for vid in video_ids[:3]:
+                    transcript = YouTubeTranscriptApi.get_transcript(vid)
+                    text = ' '.join([entry['text'] for entry in transcript[:20]])
+                    results.append({
+                        'source': 'youtube_transcript',
+                        'video_id': vid,
+                        'url': f"https://www.youtube.com/watch?v={vid}",
+                        'content': text,
+                        'timestamp': datetime.now().isoformat()
+                    })
+            except Exception as e:
+                logger.error(f"Transcript fetch error: {e}")
+            return results
+        except Exception as e:
+            logger.error(f"Video search error: {e}")
+            return []
     
     async def exhaustive_scrape(self, query: str) -> List[Dict]:
         """Full scraping of all found sources"""
@@ -454,7 +542,7 @@ class AutonomousResearchAgent:
         # Initialize components
         llm_config = self.config.get('llm', {
             'base_url': 'http://localhost:11434',
-            'model': 'dolphin-mixtral:8x7b',
+            'model': 'Mixtral-8x7B-v0.1',
             'api_type': 'ollama'
         })
         

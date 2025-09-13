@@ -12,7 +12,7 @@ apt-get install -y python3-pip git curl cron sqlite3 --no-install-recommends
 
 # Install Python packages
 echo "Installing Python packages..."
-pip3 install aiohttp beautifulsoup4 requests
+pip3 install aiohttp beautifulsoup4 requests youtube-transcript-api
 
 # Create directories
 mkdir -p logs data reports cache

@@ -96,6 +96,12 @@ Open browser: http://[your-pod-ip]:7777
 └──────────────────────────────────────────────────────────────────┘
 ```
 
+## 🔍 Information Sources
+
+- Searches Internet Archive for related books and documents
+- Gathers advice from forums like Reddit
+- Extracts transcripts from YouTube videos
+
 ## 📁 File Structure
 
 ```
@@ -340,7 +346,7 @@ chmod +x setup.sh
 # Add to RunPod startup script:
 echo "/root/research/startup.sh" >> /root/startup.sh
 ```
-The `startup.sh` script verifies that Ollama is running with the `dMixtral-8x7B-v0.1` model and then launches the research agent. All research data is stored in `/root/research.db` for easy export after the pod shuts down.
+The `startup.sh` script verifies that Ollama is running with the `Mixtral-8x7B-v0.1` model and then launches the research agent. All research data is stored in `/root/research.db` for easy export after the pod shuts down.
 
 4. **Access Interface**
 ```
