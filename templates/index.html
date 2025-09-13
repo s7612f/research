@@ -1,0 +1,16 @@
+<!doctype html>
+<html>
+<head><title>Select Mode</title></head>
+<body>
+<h1>Select Mode</h1>
+<p><a href="/logout">Logout</a></p>
+<form method="post" action="/select">
+<button type="submit" name="mode" value="research">Continue Research Agent</button>
+</form>
+<form method="post" action="/select">
+<input type="hidden" name="mode" value="chatbot"/>
+<input type="hidden" name="uncensored" value="1"/>
+<button type="submit">Start Uncensored Chatbot</button>
+</form>
+</body>
+</html>

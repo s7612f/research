@@ -13,16 +13,20 @@ RUNPOD BOOTS → AUTO-STARTS WEB UI → CHECKS DATABASE → CONTINUES OR REFINES
 
 ## 🚀 Quick Start
 
-### 1. Turn on RunPod GPU
+### 1. Clone and install
 ```bash
-# Boot your RunPod instance
-# Note the IP address (e.g., 123.45.67.89)
+git clone https://github.com/s7612f/research.git
+cd research
+./setup.sh  # prompts for initial username/password
 ```
 
-### 2. Access Web Interface
+### 2. Start the server
+```bash
+./startup.sh
 ```
-Open browser: http://[your-pod-ip]:7777
-```
+
+The script prints `http://[ip]:7777`. Open it in your browser, log in with the credentials you created, and pick **Continue Research Agent** or **Start Uncensored Chatbot**.
+
 
 ### 3. System Auto-Detects Previous Research
 - **First time**: Asks for your research topic
@@ -34,10 +38,10 @@ Open browser: http://[your-pod-ip]:7777
 ┌──────────────────────────────────────────────────────────────────┐
 │                      BOOT SEQUENCE                                │
 ├──────────────────────────────────────────────────────────────────┤
-│  1. RunPod starts → runs startup.sh automatically                 │
-│  2. Ollama loads Mixtral model                                    │
-│  3. Web server starts on port 7777                               │
-│  4. You browse to http://[pod-ip]:7777                           │
+│  1. RunPod starts                                               │
+│  2. Ollama loads Mixtral-8x7B-v0.1 model                       │
+│  3. Operator runs `./startup.sh`                                │
+│  4. You browse to http://[pod-ip]:7777                          │
 └──────────────────────────────────────────────────────────────────┘
                                 ↓
 ┌──────────────────────────────────────────────────────────────────┐
@@ -96,29 +100,24 @@ Open browser: http://[your-pod-ip]:7777
 └──────────────────────────────────────────────────────────────────┘
 ```
 
+## 🔍 Information Sources
+
+- Searches Internet Archive for related books and documents
+- Gathers advice from forums like Reddit
+- Extracts transcripts from YouTube videos
+
 ## 📁 File Structure
 
 ```
 research/
-├── web_interface.py      # Web UI (port 7777)
-├── research_agent.py     # AI brain
-├── database_manager.py   # Smart deduplication
-├── email_sender.py       # Results delivery
-├── startup.sh           # Auto-runs on boot
-├── config.json          # Settings
-│
-├── data/
-│   ├── research.db      # All findings (persistent)
-│   ├── clusters/        # Grouped similar findings
-│   └── exports/         # Email attachments
-│
-├── templates/
-│   ├── chat.html        # ChatGPT-like interface
-│   ├── progress.html    # Live research view
-│   └── review.html      # Previous findings viewer
-│
-└── logs/
-    └── research.log     # Activity log
+├── research_agent.py       # Main autonomous agent
+├── web_interface.py        # Flask web UI
+├── jobs/                   # Job manager
+├── tools/                  # Utilities (Wayback archiver)
+├── config.json             # Settings (model & database)
+├── setup.sh                # Dependency installer
+├── /root/research.db       # Persistent SQLite database
+└── logs/                   # Activity logs
 ```
 
 ## 💾 Smart Database System
@@ -203,7 +202,7 @@ Previously researched:
   "topic": "Banking System",  // Persists between sessions
   
   "ollama": {
-    "model": "dolphin-mixtral:8x7b",
+    "model": "Mixtral-8x7B-v0.1",
     "url": "http://localhost:11434"
   },
   
@@ -224,6 +223,19 @@ Previously researched:
     "enabled": true,
     "after_hours": 3
   }
+}
+```
+
+#### Scheduler and UI options
+
+```json
+"scheduler": { "enabled": false },
+"ui": {
+  "autostart_on_open": true,
+  "autostart_once_per_process": true,
+  "default_topic": "Global banking conspiracies",
+  "default_hours": 2,
+  "default_focus": "cartelization, regulatory capture, market manipulation"
 }
 ```
 
@@ -333,13 +345,20 @@ Session 3: "Focus on gold standard"
 
 ## 🛠️ Installation
 
+### Migrating from scheduled versions
+
+If you used an older release that ran on a cron schedule, remove the cron job before continuing:
+
+```bash
+crontab -l | grep -v "research_agent.py" | crontab -
+```
+
 ### On RunPod GPU
 
 1. **Clone Repository**
 ```bash
 cd /root
-git clone https://github.com/s7612f/research.git
-cd research
+git clone https://github.com/s7612f/research.git && cd research
 ```
 
 2. **Run Setup**
@@ -348,16 +367,11 @@ chmod +x setup.sh
 ./setup.sh
 ```
 
-3. **Configure Auto-Start**
+3. **Start Web UI**
 ```bash
-# Add to RunPod startup script:
-echo "/root/research/startup.sh" >> /root/startup.sh
+./startup.sh
 ```
-
-4. **Access Interface**
-```
-Browse to: http://[pod-ip]:7777
-```
+The script prints a direct URL like `http://[pod-ip]:7777`—open that link in your browser. If `ui.autostart_on_open` is enabled, the first visit triggers a run using defaults; otherwise fill the form and press **Run**.
 
 ## 📝 Commands
 
@@ -376,7 +390,7 @@ python3 export_data.py --format pdf --email user@email.com
 python3 database_manager.py --deduplicate
 
 # View contradictions
-sqlite3 data/research.db "SELECT * FROM contradictions;"
+sqlite3 /root/research.db "SELECT * FROM contradictions;"
 ```
 
 ## 🔒 Privacy & Security
@@ -394,14 +408,14 @@ sqlite3 data/research.db "SELECT * FROM contradictions;"
 | Database Size | ~100MB per 10,000 findings |
 | Research Speed | ~500 sources/hour |
 | Memory Usage | <4GB RAM |
-| GPU Usage | Minimal (Mixtral on CPU) |
+| GPU Usage | Minimal (Mixtral-8x7B-v0.1 on CPU) |
 
 ## 🐛 Troubleshooting
 
 | Issue | Solution |
 |-------|----------|
 | Port 7777 blocked | Change in config.json |
-| Database locked | `fuser -k data/research.db` |
+| Database locked | `fuser -k /root/research.db` |
 | Ollama not starting | `ollama serve` manually |
 | Web UI not loading | Check `logs/web.log` |
 | Duplicates appearing | Run `--deduplicate` |

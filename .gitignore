@@ -1,0 +1,10 @@
+__pycache__
+logs/
+reports/
+data/
+chats/*
+!chats/.gitkeep
+*.db
+*.log
+.env
+users.json
