@@ -341,6 +341,14 @@ Session 3: "Focus on gold standard"
 
 ## 🛠️ Installation
 
+### Migrating from scheduled versions
+
+If you used an older release that ran on a cron schedule, remove the cron job before continuing:
+
+```bash
+crontab -l | grep -v "research_agent.py" | crontab -
+```
+
 ### On RunPod GPU
 
 1. **Clone Repository**
