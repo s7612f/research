@@ -1,43 +1,55 @@
+import asyncio
 import threading
 import time
 import uuid
-import json
-import os
-from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 import research_agent
 
+
 class JobManager:
-    def __init__(self):
+    """Manage background research jobs."""
+
+    def __init__(self) -> None:
         self._lock = threading.Lock()
         self.current: Optional[Dict[str, Any]] = None
-        self.run_count = 0
-        self.lock_file = Path('data/locks/autostart.lock')
-        self.lock_file.parent.mkdir(parents=True, exist_ok=True)
-        if self.lock_file.exists():
-            self.lock_file.unlink()
+        self.history = []
 
-    def _run(self, job, topic, hours, focus, model, provider):
+    # ------------------------------------------------------------------
+    def _run(self, job: Dict[str, Any], topic: str, hours: float, focus: str, config: Optional[Dict[str, Any]]):
+        cancel_event = asyncio.Event()
+
+        def progress_cb(message: str, percentage: float) -> None:
+            with self._lock:
+                job['progress'] = percentage
+                job['stage'] = message
+
+        job['cancel_event'] = cancel_event
         try:
-            artifacts = research_agent.run(topic=topic, hours=hours, focus=focus,
-                                           model=model, provider=provider)
+            artifacts = research_agent.run(
+                topic=topic,
+                hours=hours,
+                focus=focus,
+                progress_callback=progress_cb,
+                cancel_event=cancel_event,
+                config=config,
+            )
             job['state'] = 'complete'
             job['progress'] = 1.0
             job['artifacts'] = artifacts
-        except Exception as e:
+        except research_agent.CancelledError:
+            job['state'] = 'cancelled'
+            job['artifacts'] = {}
+        except Exception as e:  # pragma: no cover - unexpected errors
             job['state'] = 'error'
             job['artifacts'] = {'error': str(e)}
         finally:
             with self._lock:
+                self.history.append(dict(job))
                 self.current = job
-            if self.lock_file.exists():
-                try:
-                    self.lock_file.unlink()
-                except OSError:
-                    pass
 
-    def start(self, topic: str, hours: float, focus: str, model: Optional[str]=None, provider: Optional[str]=None) -> str:
+    # ------------------------------------------------------------------
+    def start(self, topic: str, hours: float, focus: str, config: Optional[Dict[str, Any]] = None) -> str:
         with self._lock:
             if self.current and self.current.get('state') == 'running':
                 return self.current['id']
@@ -48,50 +60,31 @@ class JobManager:
                 'topic': topic,
                 'started_at': time.time(),
                 'progress': 0.0,
-                'artifacts': {}
+                'artifacts': {},
             }
             self.current = job
-            self.run_count += 1
-            t = threading.Thread(target=self._run, args=(job, topic, hours, focus, model, provider), daemon=True)
+            t = threading.Thread(target=self._run, args=(job, topic, hours, focus, config), daemon=True)
             t.start()
             return job_id
 
-    def status(self, job_id: Optional[str]=None) -> Dict[str, Any]:
+    def status(self, job_id: Optional[str] = None) -> Dict[str, Any]:
         with self._lock:
             if not self.current:
                 return {'state': 'idle'}
             return dict(self.current)
 
-    def cancel(self, job_id: Optional[str]=None) -> bool:
-        # Best-effort: we can't cancel threads; mark state
+    def cancel(self, job_id: Optional[str] = None) -> bool:
         with self._lock:
             if self.current and self.current.get('state') == 'running':
-                self.current['state'] = 'error'
-                self.current['artifacts'] = {'error': 'cancelled'}
+                self.current['cancel_event'].set()
                 return True
         return False
 
-    def active(self) -> bool:
-        with self._lock:
-            return self.current is not None and self.current.get('state') == 'running'
-
-    def acquire_autostart_lock(self) -> bool:
-        try:
-            fd = os.open(self.lock_file, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-            os.close(fd)
-            return True
-        except FileExistsError:
-            return False
-
-    # Test helper
-    def reset_for_test(self):
+    # ------------------------------------------------------------------
+    def reset_for_test(self) -> None:
         with self._lock:
             self.current = None
-            self.run_count = 0
-        if self.lock_file.exists():
-            try:
-                self.lock_file.unlink()
-            except OSError:
-                pass
+            self.history = []
+
 
 job_manager = JobManager()

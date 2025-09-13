@@ -1,80 +1,82 @@
-import json
+import asyncio
+from types import SimpleNamespace
+
 from jobs.job_manager import job_manager
 
-with open('config.json') as f:
-    CONFIG = json.load(f)
+try:  # optional FastAPI import
+    from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+    from fastapi.testclient import TestClient
+    from pydantic import BaseModel
+except Exception:  # fallback stubs when FastAPI isn't available
+    FastAPI = None
+    WebSocket = object
+    WebSocketDisconnect = Exception
+    TestClient = None
 
-autostarted = False
+    class BaseModel:
+        def __init__(self, **data):
+            for k, v in data.items():
+                setattr(self, k, v)
 
-def handle_index():
-    global autostarted
-    if (CONFIG.get('ui', {}).get('autostart_on_open') and
-        (not autostarted or not CONFIG['ui'].get('autostart_once_per_process')) and
-        not job_manager.active() and
-        job_manager.acquire_autostart_lock()):
-        job_manager.start(
-            CONFIG['ui'].get('default_topic', ''),
-            CONFIG['ui'].get('default_hours', 1),
-            CONFIG['ui'].get('default_focus', '')
-        )
-        autostarted = True
-    return "OK"
 
-def handle_run(data):
-    topic = data.get('topic', CONFIG['ui'].get('default_topic'))
-    hours = float(data.get('hours', CONFIG['ui'].get('default_hours', 1)))
-    focus = data.get('focus', CONFIG['ui'].get('default_focus', ''))
-    model = data.get('model')
-    provider = data.get('provider')
-    job_id = job_manager.start(topic, hours, focus, model=model, provider=provider)
-    return {'job_id': job_id}
+class ResearchRequest(BaseModel):
+    topic: str
+    hours: float = 1.0
+    focus: str = ""
 
-def handle_cancel():
-    return {'cancelled': job_manager.cancel()}
 
-def handle_status():
-    return job_manager.status()
+def start_research(req: ResearchRequest):
+    job_id = job_manager.start(req.topic, req.hours, req.focus)
+    return {"job_id": job_id}
 
-def run_server():
-    from http.server import BaseHTTPRequestHandler, HTTPServer
-    import json as _json
 
-    class Handler(BaseHTTPRequestHandler):
-        def do_GET(self_inner):
-            if self_inner.path == '/':
-                handle_index()
-                self_inner.send_response(200)
-                self_inner.end_headers()
-                self_inner.wfile.write(b'OK')
-            elif self_inner.path == '/status':
-                self_inner.send_response(200)
-                self_inner.end_headers()
-                self_inner.wfile.write(_json.dumps(handle_status()).encode())
-            else:
-                self_inner.send_response(404)
-                self_inner.end_headers()
+def get_status(job_id: str):
+    return job_manager.status(job_id)
 
-        def do_POST(self_inner):
-            length = int(self_inner.headers.get('Content-Length', 0))
-            data = self_inner.rfile.read(length)
-            try:
-                payload = _json.loads(data.decode()) if data else {}
-            except Exception:
-                payload = {}
-            if self_inner.path == '/run':
-                res = handle_run(payload)
-            elif self_inner.path == '/cancel':
-                res = handle_cancel()
-            else:
-                self_inner.send_response(404)
-                self_inner.end_headers()
-                return
-            self_inner.send_response(200)
-            self_inner.end_headers()
-            self_inner.wfile.write(_json.dumps(res).encode())
 
-    server = HTTPServer(('0.0.0.0', 7777), Handler)
-    server.serve_forever()
+if FastAPI:
+    app = FastAPI()
 
-if __name__ == '__main__':
-    run_server()
+    @app.post("/research/start")
+    async def _start(req: ResearchRequest):
+        return start_research(req)
+
+    @app.get("/research/{job_id}/status")
+    async def _status(job_id: str):
+        return get_status(job_id)
+
+    @app.websocket("/ws/{job_id}")
+    async def websocket_endpoint(websocket: WebSocket, job_id: str):
+        await websocket.accept()
+        try:
+            while True:
+                await asyncio.sleep(0.1)
+                await websocket.send_json(get_status(job_id))
+                state = get_status(job_id).get("state")
+                if state in {"complete", "error", "cancelled", "idle"}:
+                    break
+        except WebSocketDisconnect:  # pragma: no cover - network disconnect
+            pass
+        finally:
+            await websocket.close()
+
+    client = TestClient(app)
+else:
+    app = None
+
+    class _Resp:
+        def __init__(self, data):
+            self._data = data
+
+        def json(self):
+            return self._data
+
+    class _Client:
+        def post(self, path, json):
+            return _Resp(start_research(ResearchRequest(**json)))
+
+        def get(self, path):
+            job_id = path.strip("/").split("/")[1]
+            return _Resp(get_status(job_id))
+
+    client = _Client()

@@ -1,29 +1,33 @@
 {
-    "max_hours": 3,
-    "git_enabled": true,
-    "auto_push": false,
-    "database_path": "/root/research.db",
     "llm": {
         "base_url": "http://localhost:11434",
-        "model": "dMixtral-8x7B-v0.1",
-        "api_type": "ollama",
-        "timeout": 120
+        "model": "dolphin-mixtral:8x7b",
+        "temperature": 0.7,
+        "max_tokens": 4096,
+        "timeout": 120,
+        "retry_attempts": 3
+    },
+    "embedding": {
+        "model": "all-MiniLM-L6-v2",
+        "dimension": 384
     },
     "research": {
         "max_iterations": 100,
-        "depth_threshold": 0.7,
-        "controversial_topics_allowed": true
+        "min_sources": 10,
+        "max_sources": 500,
+        "depth_levels": 3,
+        "enable_controversial": true,
+        "fact_check_threshold": 0.8
     },
-    "notifications": {
-        "enabled": false,
-        "webhook_url": ""
+    "scraping": {
+        "rate_limit": 10,
+        "timeout": 30,
+        "user_agents": [],
+        "proxy_list": []
     },
-    "scheduler": {"enabled": false},
-    "ui": {
-        "autostart_on_open": true,
-        "autostart_once_per_process": true,
-        "default_topic": "Global banking conspiracies",
-        "default_hours": 2,
-        "default_focus": "cartelization, regulatory capture, market manipulation"
+    "database": {
+        "path": "data/research.db",
+        "backup_interval": 3600,
+        "connection_pool_size": 10
     }
 }
