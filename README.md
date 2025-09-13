@@ -35,8 +35,8 @@ Open browser: http://[your-pod-ip]:7777
 │                      BOOT SEQUENCE                                │
 ├──────────────────────────────────────────────────────────────────┤
 │  1. RunPod starts                                               │
-│  2. Ollama loads dolphin-mixtral:8x7b model                     │
-│  3. Operator runs `python3 web_interface.py`                    │
+│  2. Ollama loads dMixtral-8x7B-v0.1 model                      │
+│  3. Operator runs `./startup.sh`                                │
 │  4. You browse to http://[pod-ip]:7777                          │
 └──────────────────────────────────────────────────────────────────┘
                                 ↓
@@ -198,7 +198,7 @@ Previously researched:
   "topic": "Banking System",  // Persists between sessions
   
   "ollama": {
-    "model": "dolphin-mixtral:8x7b",
+    "model": "dMixtral-8x7B-v0.1",
     "url": "http://localhost:11434"
   },
   
@@ -357,7 +357,7 @@ chmod +x setup.sh
 
 3. **Start Web UI**
 ```bash
-python3 web_interface.py
+./startup.sh
 ```
 Open `http://[pod-ip]:7777` in your browser. If `ui.autostart_on_open` is enabled, the first visit triggers a run using defaults; otherwise fill the form and press **Run**.
 
@@ -396,7 +396,7 @@ sqlite3 data/research.db "SELECT * FROM contradictions;"
 | Database Size | ~100MB per 10,000 findings |
 | Research Speed | ~500 sources/hour |
 | Memory Usage | <4GB RAM |
-| GPU Usage | Minimal (dolphin-mixtral:8x7b on CPU) |
+| GPU Usage | Minimal (dMixtral-8x7B-v0.1 on CPU) |
 
 ## 🐛 Troubleshooting
 

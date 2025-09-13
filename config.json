@@ -5,7 +5,7 @@
     "database_path": "/root/research.db",
     "llm": {
         "base_url": "http://localhost:11434",
-        "model": "dolphin-mixtral:8x7b",
+        "model": "dMixtral-8x7B-v0.1",
         "api_type": "ollama",
         "timeout": 120
     },
