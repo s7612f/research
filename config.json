@@ -1,0 +1,20 @@
+{
+    "max_hours": 3,
+    "git_enabled": true,
+    "auto_push": false,
+    "llm": {
+        "base_url": "http://localhost:11434",
+        "model": "dolphin-mixtral:8x7b",
+        "api_type": "ollama",
+        "timeout": 120
+    },
+    "research": {
+        "max_iterations": 100,
+        "depth_threshold": 0.7,
+        "controversial_topics_allowed": true
+    },
+    "notifications": {
+        "enabled": false,
+        "webhook_url": ""
+    }
+}
