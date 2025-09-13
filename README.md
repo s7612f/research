@@ -35,7 +35,7 @@ Open browser: http://[your-pod-ip]:7777
 │                      BOOT SEQUENCE                                │
 ├──────────────────────────────────────────────────────────────────┤
 │  1. RunPod starts → runs startup.sh automatically                 │
-│  2. Ollama loads Mixtral model                                    │
+│  2. Ollama loads dolphin-mixtral:8x7b model                       │
 │  3. Web server starts on port 7777                               │
 │  4. You browse to http://[pod-ip]:7777                           │
 └──────────────────────────────────────────────────────────────────┘
@@ -346,7 +346,7 @@ chmod +x setup.sh
 # Add to RunPod startup script:
 echo "/root/research/startup.sh" >> /root/startup.sh
 ```
-The `startup.sh` script verifies that Ollama is running with the `Mixtral-8x7B-v0.1` model and then launches the research agent. All research data is stored in `/root/research.db` for easy export after the pod shuts down.
+The `startup.sh` script verifies that Ollama is running with the `dolphin-mixtral:8x7b` model and then launches the research agent. All research data is stored in `/root/research.db` for easy export after the pod shuts down.
 
 4. **Access Interface**
 ```
@@ -388,7 +388,7 @@ sqlite3 data/research.db "SELECT * FROM contradictions;"
 | Database Size | ~100MB per 10,000 findings |
 | Research Speed | ~500 sources/hour |
 | Memory Usage | <4GB RAM |
-| GPU Usage | Minimal (Mixtral on CPU) |
+| GPU Usage | Minimal (dolphin-mixtral:8x7b on CPU) |
 
 ## 🐛 Troubleshooting
 

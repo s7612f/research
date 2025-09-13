@@ -79,7 +79,7 @@ class ResearchBrain:
     
     def __init__(self, llm_config: Dict):
         self.base_url = llm_config.get('base_url', 'http://localhost:11434')
-        self.model = llm_config.get('model', 'Mixtral-8x7B-v0.1')
+        self.model = llm_config.get('model', 'dolphin-mixtral:8x7b')
         self.api_type = llm_config.get('api_type', 'ollama')
         
     async def think(self, context: str, question: str) -> Dict:
@@ -542,7 +542,7 @@ class AutonomousResearchAgent:
         # Initialize components
         llm_config = self.config.get('llm', {
             'base_url': 'http://localhost:11434',
-            'model': 'Mixtral-8x7B-v0.1',
+            'model': 'dolphin-mixtral:8x7b',
             'api_type': 'ollama'
         })
         
